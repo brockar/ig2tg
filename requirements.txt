@@ -1,0 +1,5 @@
+instaloader
+retrying
+urllib3
+requests
+python-telegram-bot
