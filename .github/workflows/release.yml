@@ -3,6 +3,9 @@ name: Build and Upload Python Package
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - '*'
 
 jobs:
   build-and-upload:
