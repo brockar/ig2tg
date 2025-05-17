@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ig2tg"
+version = "0.1.0"
+description = "Instagram Stories to Telegram automation tool"
+authors = [
+    { name="brockar", email="martinnguzman.mg@gmail.com" }
+]
+readme = "README.md"
+license-files = ["LICENSE"]
+requires-python = ">=3.7"
+dependencies = [
+    "instaloader",
+    "python-telegram-bot",
+    "retrying",
+    "urllib3",
+    "requests",
+    "watchdog",
+    "python-dotenv"
+]
+
+[project.scripts]
+ig2tg = "ig2tg.main:main"
+
+[tool.setuptools.packages.find]
+where = ["ig2tg"]
+exclude = ["stories", "stories.*"]

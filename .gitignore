@@ -173,3 +173,4 @@ cython_debug/
 cookies.txt
 stories/*
 chat_id.txt
+user_list.txt
