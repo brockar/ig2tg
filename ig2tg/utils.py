@@ -97,3 +97,28 @@ def wait_before_next_check(seconds: int = 86400) -> None:
     hours = seconds // 3600
     logger.info(f"Waiting {hours} hour{'s' if hours != 1 else ''} before next check to avoid hitting Instagram's rate limits.")
     time.sleep(seconds)
+
+def delete_old_files(folder_path: str, days: int = 2) -> None:
+    """Delete files older than `days` in the given folder (recursively), and remove empty folders."""
+    now = time.time()
+    cutoff = now - days * 86400  # 86400 seconds in a day
+    # First, delete old files
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                if os.path.getmtime(file_path) < cutoff:
+                    os.remove(file_path)
+                    logger.info(f"Deleted old file: {file_path}")
+            except Exception as e:
+                logger.error(f"Error deleting {file_path}: {e}")
+    # Then, remove empty directories (bottom-up)
+    for root, dirs, _ in os.walk(folder_path, topdown=False):
+        for dir in dirs:
+            dir_path = os.path.join(root, dir)
+            try:
+                if not os.listdir(dir_path):
+                    os.rmdir(dir_path)
+                    logger.info(f"Deleted empty folder: {dir_path}")
+            except Exception as e:
+                logger.error(f"Error deleting folder {dir_path}: {e}")

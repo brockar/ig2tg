@@ -7,8 +7,9 @@ logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 import instaloader
 
-from ig2tg.utils import ig_login, load_user_list, wait_before_next_check
+from ig2tg.utils import ig_login, load_user_list, wait_before_next_check, delete_old_files
 from ig2tg.stories import download_stories_for_user
+
 
 def main():
     """Main entry point for the IG2TG story downloader."""
@@ -39,6 +40,9 @@ def main():
                 download_stories_for_user(target_user, instance)
             except Exception as e:
                 logger.error(f"Error processing user '{target_user}': {e}", exc_info=True)
+        # Delete stories older than 2 days
+        #delete_old_files("stories", days=2)
+        
         wait_before_next_check(86400)  # Wait 1 day
 
 if __name__ == "__main__":
