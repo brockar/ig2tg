@@ -16,7 +16,6 @@ CHAT_ID_FILE = "chat_id.txt"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 # Suppress INFO logs from httpx (only show WARNING and above)
 logging.getLogger("httpx").setLevel(logging.WARNING)
 

@@ -1,5 +1,0 @@
-# Add one Instagram username per line
-natgeo
-python.learning
-
-# Lines starting with # are ignored

@@ -1,7 +1,6 @@
 import os
 import logging
 
-# Logging setup at the very top
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
