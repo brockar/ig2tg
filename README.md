@@ -106,6 +106,46 @@ The tool will:
 
 ---
 
+## Running from a GitHub Release
+
+1. **Download the latest built package**
+
+   Go to the [Releases](https://github.com/brockar/ig2tg/releases) page and download either:
+   - `ig2tg-0.0.1-py3-none-any.whl` (wheel)
+   - or `ig2tg-0.0.1.tar.gz` (source distribution)
+
+2. **Install the package**
+
+   Replace `<filename>` with the name of the file you downloaded:
+
+   ```bash
+   pip install <filename>
+   ```
+
+   For example:
+
+   ```bash
+   pip install ig2tg-0.0.1-py3-none-any.whl
+   # or
+   pip install ig2tg-0.0.1.tar.gz
+   ```
+
+3. **Run the tool**
+
+   After installation, you can run the CLI:
+
+   ```bash
+   ig2tg
+   ```
+
+   Or as a Python module:
+
+   ```bash
+   python -m ig2tg.main
+   ```
+
+---
+
 ## Telegram Integration
 
 - The Telegram bot will send all new stories to the chat where you first interact with it.
