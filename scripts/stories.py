@@ -4,6 +4,7 @@ from retrying import retry
 import requests
 import os
 import logging
+from utils import delete_files_with_specific_extensions
 
 logger = logging.getLogger(__name__)
 
@@ -27,18 +28,14 @@ def download_stories_for_user(target_user, instance):
 
                 # Delete unwanted files for stories (diferent)
                 story_dir = os.path.join("stories", target_user)
-                for root, dirs, files in os.walk(story_dir):
-                    for file in files:
-                        if file.endswith((".xz", ".txt", ".json")):
-                            os.remove(os.path.join(root, file))
-                            logger.info(f"Deleting: {file}")
+                cleanup_story_files(story_dir)
 
             elif profile and not profile.has_viewable_story:
                 logger.info(
-                    "There are no viewable story in the account you are looking for."
+                    "There are no viewable stories in the account you are looking for."
                 )
         except KeyError as e:
-            logger.error(f"Error: Missing expected data in Instagram response: {e}")
+            logger.exception("Error: Missing expected data in Instagram response")
             logger.error("This may be due to login/session issues or Instagram API changes.")
     except exceptions.ConnectTimeoutError:
         @retry(
@@ -58,9 +55,12 @@ def download_stories_for_user(target_user, instance):
             logger.error(f"Error: {e}")
     except instaloader.exceptions.PrivateProfileNotFollowedException:
         logger.warning(
-            "This is a private account. You need to follow it to access it's stories."
+            "This is a private account. You need to follow it to access its stories."
         )
     except instaloader.exceptions.ProfileNotExistsException:
         logger.warning(
-            "The account you are looking for is not exists on instagram. Try another username"
+            "The account you are looking for does not exist on Instagram. Try another username."
         )
+
+def cleanup_story_files(story_dir: str):
+    delete_files_with_specific_extensions(story_dir, ["xz", "txt", "json"])
