@@ -1,37 +1,61 @@
+import instaloader
 from urllib3 import exceptions
 from retrying import retry
-import instaloader
 import requests
 import os
+from dotenv import load_dotenv
 from utils import ig_login
 
-instance = instaloader.Instaloader()
 
+load_dotenv(override=True)
 username = os.getenv("IG_USERNAME")
 password = os.getenv("IG_PASSWORD")
 session = os.getenv("IGSESSIONID")
 csrftoken = os.getenv("IGCSRFTOKEN")
 
+instance = instaloader.Instaloader()
 instance.compress_json = False
 
-ig_login(instance, username, password, session, csrftoken)
+# Set the download directory for stories
+instance.dirname_pattern = os.path.join("stories", "{target}")
 
-# target_user = input("Enter any user you want: ")
-target_user = 'mnrfich'
-print("The account you are looking for is being searched in Instagram's database..")
+instance = ig_login(instance, username, password, session, csrftoken)
+if not instance:
+    print("Login failed. Exiting.")
+    exit(1)
+
+target_user = input("Enter any user you want: ")
+if not target_user:
+    print("You need to enter a username.")
+    exit(1)
+
+print("The account you are looking for is being searched in Instagram..")
 
 try:
     profile = instaloader.Profile.from_username(instance.context, target_user)
     try:
         if profile and profile.has_viewable_story:
             print("Account found. Downloading stories.. ")
-            for story in instance.get_stories(profile.user):
+            for story in instance.get_stories(userids=[profile.userid]):
                 for item in story.get_items():
-                    instance.download_storyitem(item, ":stories")
+                    # Download the story item
+                    instance.download_storyitem(item, target_user)
+                    story_dir = os.path.join("stories", target_user)
+                    # Find the file just downloaded (by date string in filename)
+                    date_str = item.date_local.strftime("%Y-%m-%d_%H-%M-%S_UTC")
+                    for ext in [".mp4", ".jpg"]:
+                        original_name = f"{date_str}{ext}"
+                        original_path = os.path.join(story_dir, original_name)
+                        if os.path.exists(original_path):
+                            new_name = f"{target_user}-{original_name}"
+                            new_path = os.path.join(story_dir, new_name)
+                            os.rename(original_path, new_path)
+                            print(f"Renamed {original_name} to {new_name}")
             print("The download process has been completed.")
 
             # Delete unwanted files for stories (diferent)
-            for root, dirs, files in os.walk(target_user):
+            story_dir = os.path.join("stories", target_user)
+            for root, dirs, files in os.walk(story_dir):
                 for file in files:
                     if file.endswith((".xz", ".txt", ".json")):
                         os.remove(os.path.join(root, file))
