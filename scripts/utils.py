@@ -28,10 +28,8 @@ def ig_login(instance, username, password, session, csrftoken):
                 {"sessionid": session , "csrftoken": csrftoken },
             )
 
-    # Save the session to a file for future use
-    instance.save_session_to_file("cookies.txt")
-
     if instance.context.is_logged_in:
+        instance.save_session_to_file("cookies.txt")
         print(f"Logged as {username}")
     else:
         print("An error occurred while logging into the account.")
