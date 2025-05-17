@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ig2tg"
-version = "0.1.0"
+version = "0.0.1"
 description = "Instagram Stories to Telegram automation tool"
 authors = [
     { name="brockar", email="martinnguzman.mg@gmail.com" }
