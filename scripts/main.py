@@ -1,22 +1,15 @@
 import os
-import time
 import logging
+
+# Logging setup at the very top
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 from dotenv import load_dotenv
 import instaloader
 
-from utils import ig_login
+from utils import ig_login, load_user_list, wait_before_next_check
 from stories import download_stories_for_user
-
-logger = logging.getLogger(__name__)
-
-def prompt_for_username():
-    """Prompt the user for an Instagram username or exit command."""
-    return input("Enter the Instagram username to download stories (or 'exit' to quit): ").strip()
-
-def wait_before_next_check(seconds=60):
-    """Wait for a specified number of seconds, logging the reason."""
-    logger.info(f"Waiting {seconds} seconds before next check to avoid hitting Instagram's rate limits.")
-    time.sleep(seconds)
 
 def main():
     """Main entry point for the IG2TG story downloader."""
@@ -35,18 +28,22 @@ def main():
         logger.error("Login failed. Exiting.")
         return
 
-    while True:
-        target_user = prompt_for_username()
-        if target_user.lower() == "exit":
-            logger.info("Exiting.")
-            break
-        if not target_user:
-            logger.warning("You need to enter a username.")
-            continue
+    users = load_user_list("user_list.txt")
+    if not users:
+        logger.info("No users found in user_list.txt. Please add at least one username and restart the script.")
+        return
 
-        download_stories_for_user(target_user, instance)
-        wait_before_next_check(60)
+    while True:
+        for target_user in users:
+            logger.info(f"Checking stories for user: {target_user}")
+            try:
+                download_stories_for_user(target_user, instance)
+            except Exception as e:
+                logger.error(f"Error processing user '{target_user}': {e}", exc_info=True)
+        wait_before_next_check(86400)  # Wait 1 day
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        logger.info("Shutdown requested by user. Exiting gracefully.")

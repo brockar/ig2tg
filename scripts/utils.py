@@ -1,9 +1,11 @@
 import os
 import logging
+import time
+from typing import List, Optional, Any
 
 logger = logging.getLogger(__name__)
 
-def delete_files_with_specific_extensions(folder_path, extensions):
+def delete_files_with_specific_extensions(folder_path: str, extensions: List[str]) -> None:
     for root_folder, _, files in os.walk(folder_path):
         for file in files:
             file_extension = file.split(".")[-1]
@@ -15,7 +17,13 @@ def delete_files_with_specific_extensions(folder_path, extensions):
                 except Exception as e:
                     logger.error(f"Error occurred while deleting {file_path}: {e}")
 
-def ig_login(instance, username, password, session, csrftoken):
+def ig_login(
+    instance: Any,
+    username: str,
+    password: Optional[str],
+    session: Optional[str],
+    csrftoken: Optional[str]
+) -> Optional[Any]:
     """
     Attempt to login to Instagram using credentials or session cookies.
     Returns the logged-in instance or False if login fails.
@@ -68,3 +76,24 @@ def ig_login(instance, username, password, session, csrftoken):
     else:
         logger.error("Login failed: Not actually logged in after attempts.")
         return False
+
+def load_user_list(filename: str = "user_list.txt") -> List[str]:
+    """Load a list of Instagram usernames from a file (one per line). If file doesn't exist, create it."""
+    if not os.path.exists(filename):
+        logger.warning(f"User list file '{filename}' not found. Creating an empty one.")
+        with open(filename, "w") as f:
+            f.write("# Add one Instagram username per line\n")
+        return []
+    with open(filename, "r") as f:
+        users = [
+            line.strip()
+            for line in f
+            if line.strip() and not line.strip().startswith("#")
+        ]
+    return users
+
+def wait_before_next_check(seconds: int = 86400) -> None:
+    """Wait for a specified number of seconds (default: 1 day)."""
+    hours = seconds // 3600
+    logger.info(f"Waiting {hours} hour{'s' if hours != 1 else ''} before next check to avoid hitting Instagram's rate limits.")
+    time.sleep(seconds)
