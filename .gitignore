@@ -171,3 +171,5 @@ cython_debug/
 .pypirc
 
 cookies.txt
+stories/*
+chat_id.txt
