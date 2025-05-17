@@ -6,6 +6,7 @@ from telegram import Update
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import logging
 
 load_dotenv(override=True)
 TG_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -13,16 +14,36 @@ TG_USER = os.getenv("TG_USER")  # Can be username (str) or user ID (int)
 STORIES_DIR = "stories"
 CHAT_ID_FILE = "chat_id.txt"
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Suppress INFO logs from httpx (only show WARNING and above)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+ALLOWED_EXTENSIONS = (".jpg", ".png", ".mp4")
+
 async def send_image(context, chat_id, file_path):
-    with open(file_path, "rb") as image:
-        await context.bot.send_photo(chat_id=chat_id, photo=image)
-        print(f"Sent {file_path} to Telegram.")
+    if not is_safe_path(STORIES_DIR, file_path):
+        logger.warning(f"Unsafe file path detected: {file_path}")
+        return
+    try:
+        with open(file_path, "rb") as image:
+            await context.bot.send_photo(chat_id=chat_id, photo=image)
+            logger.info(f"Sent {file_path} to Telegram.")
+    except Exception as e:
+        logger.error(f"Failed to open {file_path}: {e}")
 
 async def send_all_images(context, chat_id):
     sent = False
     for root, _, files in os.walk(STORIES_DIR):
-        for file in files:
-            if file.lower().endswith((".jpg", ".png", ".mp4")):
+        image_files = [file for file in files if file.lower().endswith(ALLOWED_EXTENSIONS)]
+        if image_files:
+            # Get the folder name relative to STORIES_DIR
+            folder_name = os.path.relpath(root, STORIES_DIR)
+            if folder_name == ".":
+                folder_name = "root"
+            await context.bot.send_message(chat_id=chat_id, text=f"Images from *{folder_name}*:", parse_mode="Markdown")
+            for file in image_files:
                 file_path = os.path.join(root, file)
                 await send_image(context, chat_id, file_path)
                 sent = True
@@ -38,7 +59,10 @@ class ImageHandler(FileSystemEventHandler):
         self.loop = loop
 
     def on_created(self, event):
-        if not event.is_directory and event.src_path.lower().endswith((".jpg", ".png", ".mp4")):
+        if not event.is_directory and event.src_path.lower().endswith(ALLOWED_EXTENSIONS):
+            if not is_safe_path(STORIES_DIR, event.src_path):
+                logger.warning(f"Unsafe file path detected: {event.src_path}")
+                return
             # Wait until file is stable (size doesn't change for 0.5s)
             stable = False
             last_size = -1
@@ -52,6 +76,18 @@ class ImageHandler(FileSystemEventHandler):
                         time.sleep(0.5)
                 except FileNotFoundError:
                     time.sleep(0.1)
+            # Send folder name before sending the image
+            folder_name = os.path.relpath(os.path.dirname(event.src_path), STORIES_DIR)
+            if folder_name == ".":
+                folder_name = "root"
+            asyncio.run_coroutine_threadsafe(
+                self.context.bot.send_message(
+                    chat_id=self.chat_id,
+                    text=f"Image from *{folder_name}*:",
+                    parse_mode="Markdown"
+                ),
+                self.loop
+            )
             asyncio.run_coroutine_threadsafe(
                 send_image(self.context, self.chat_id, event.src_path),
                 self.loop
@@ -70,7 +106,6 @@ def load_chat_id():
 async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     chat_id = update.effective_chat.id
-    # Save chat_id for future use
     save_chat_id(chat_id)
     # Check if TG_USER is username or user ID
     if (str(user.id) == TG_USER) or (user.username and user.username.lower() == TG_USER.lower()):
@@ -87,11 +122,17 @@ async def reply_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=chat_id, text="Sorry, you are not authorized to use this bot.")
 
+def is_safe_path(base_dir, path):
+    # Resolve absolute paths and check if path starts with base_dir
+    base_dir = os.path.abspath(base_dir)
+    path = os.path.abspath(path)
+    return os.path.commonpath([base_dir]) == os.path.commonpath([base_dir, path])
+
 def main():
     if not TG_TOKEN or TG_TOKEN.strip() == "":
-        print("Error: TELEGRAM_TOKEN is missing or empty in your .env file.")
+        logger.error("Error: TELEGRAM_TOKEN is missing or empty in your .env file.")
         return
-    print("Telegram bot is starting...")  # Print to terminal when bot starts
+    logger.info("Telegram bot is starting...")
     app = Application.builder().token(TG_TOKEN).build()
     chat_id = load_chat_id()
     if chat_id:

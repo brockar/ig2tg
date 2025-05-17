@@ -1,6 +1,7 @@
 instaloader
+python-telegram-bot
 retrying
 urllib3
 requests
-python-telegram-bot
 watchdog
+logging
