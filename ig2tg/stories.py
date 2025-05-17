@@ -4,7 +4,7 @@ from retrying import retry
 import requests
 import os
 import logging
-from utils import delete_files_with_specific_extensions
+from ig2tg.utils import delete_files_with_specific_extensions
 
 logger = logging.getLogger(__name__)
 

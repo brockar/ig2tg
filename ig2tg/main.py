@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 from dotenv import load_dotenv
 import instaloader
 
-from utils import ig_login, load_user_list, wait_before_next_check
-from stories import download_stories_for_user
+from ig2tg.utils import ig_login, load_user_list, wait_before_next_check
+from ig2tg.stories import download_stories_for_user
 
 def main():
     """Main entry point for the IG2TG story downloader."""
